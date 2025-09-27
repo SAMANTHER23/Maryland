@@ -14,6 +14,7 @@ void buttonL1Action() {
   
   // Wait until the button is released to stop the rollers.
   while(controller1.ButtonL1.pressing()) {
+    if (controller1.ButtonR2.pressing()) outTake();
     wait (20, msec);
   }
   stopRollers();
@@ -29,13 +30,7 @@ void buttonL2Action() {
 }
 
 void buttonR1Action() {
-  outTake();
-  
-  // Wait until the button is released to stop the rollers.
-  while(controller1.ButtonR1.pressing()) {
-    wait (20, msec);
-  }
-  stopRollers();
+  toggleHornPosition();
 }
 
 void buttonR2Action()

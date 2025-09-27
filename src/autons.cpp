@@ -1,5 +1,5 @@
 #include "vex.h"
-int currentAutonSelection = 0;        // Current auton selection
+int currentAutonSelection = 1;        // Current auton selection
 int autonTestStep = 0;                // Current step in auton
 
 
@@ -7,27 +7,45 @@ int autonTestStep = 0;                // Current step in auton
 void auton1() {
   chassis.setHeading(180); // place the robot forwards
   chassis.driveDistance(-30, 6);
-  rollerTop.spin(forward, 7, volt);
-  rollerBottom.spin(forward, 7, volt);
+  rollerTop.spin(forward, 5, volt);
   wait(500, msec);
   stopRollers();
-  chassis.driveDistance(7, 6);
-  chassis.turnToHeading(269.67, 6);//was 
-  chassis.driveDistance(4.23, 6);
+  chassis.driveDistance(9, 5);
+  chassis.turnToHeading(270, 6);//was 
   inTake();
-  chassis.driveDistance(8, 4.67);
+  chassis.driveDistance(13, 4);
   wait(1000, msec);
   stopRollers();
   chassis.turnToHeading(-135, 6);
+  chassis.driveDistance(42, 6);
+  chassis.turnToHeading(180, 6);
+  chassis.driveDistance(-24, 6);
+  scoreLong();
+  wait(1050, msec);
+  stopRollers();
 
 }
 
 // The second autonomous routine.
-void sampleAuton2() {
-  chassis.setHeading(180); // place the robot backwards
-  chassis.driveDistance(-12, 6);
+void auton2() {
+  chassis.setHeading(0); // place the robot backwards
+  chassis.driveDistance(-30, 6);
+  rollerTop.spin(forward, 4, volt);
+  wait(500, msec);
+  stopRollers();
+  chassis.driveDistance(8, 5);
+  chassis.turnToHeading(-90, 6);//was 
+  rollerBottom.spin(forward, 9, volt);
+  chassis.driveDistance(13, 4);
+  wait(1050, msec);
+  stopRollers();
+  chassis.turnToHeading(-45, 6);
+  chassis.driveDistance(42, 6);
   chassis.turnToHeading(0, 6);
-  chassis.driveDistance(12, 6);
+  chassis.driveDistance(-26, 6);
+  rollerTop.spin(forward, 12, volt);
+  wait(1500, msec);
+  stopRollers();
 }
 
 // A long autonomous routine, e.g. skill.
@@ -59,7 +77,7 @@ void runAutonItem() {
     auton1();
     break;
   case 1:
-    sampleAuton2();
+    auton2();
     break;
   case 2:
     sampleSkill();

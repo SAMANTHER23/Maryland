@@ -29,6 +29,7 @@ int DRIVE_MODE = 0;
 // ------------------------------------------------------------------------
 motor rollerBottom = motor(PORT10, ratio6_1, false);//20 for one, 10 for two
 motor rollerTop = motor(PORT14, ratio6_1, true);//19 for one, 14 for two
+motor hornMotor = motor(PORT8, ratio18_1, true);//19 for one, 14 for two
 
 
 // total number of motors, including drivetrain
@@ -58,6 +59,20 @@ void scoreLong() {
   rollerTop.spin(forward, 11, volt);
 }
 
+bool hornUp = false;
+void toggleHornPosition() {
+  hornUp = !hornUp;
+  if (hornUp) {
+    hornMotor.spin(forward, 8, volt);
+    wait(100, msec);
+    waitUntil(hornMotor.torque()>0.4);
+    hornMotor.stop(brake);
+  } else {
+    hornMotor.setVelocity(75, percent);
+    hornMotor.setTimeout(1000, msec);
+    hornMotor.spinFor(reverse, 300, degrees, false);
+  }
+}
 // ------------------------------------------------------------------------
 //               Code below are not specific to any game
 // ------------------------------------------------------------------------

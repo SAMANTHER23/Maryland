@@ -6,7 +6,7 @@ void inTake();
 void outTake();
 void stopRollers();
 void scoreLong();
-void driveDistance();;
+void toggleHornPosition();;
 
 extern motor rollerTop;
 extern motor rollerBottom;
