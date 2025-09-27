@@ -77,17 +77,13 @@ void runAutonItem() {
   case 1:
     auton2();
     break;
-  case 2:
-    sampleSkill();
-    break;
-    }
+  }
 }
 
 // The names of the autonomous routines to be displayed in the menu.
 char const * autonMenuText[] = {
-  "auton1",
-  "auton2",
-  "auton_skill"
+  "left",
+  "right"
 };
 
 
