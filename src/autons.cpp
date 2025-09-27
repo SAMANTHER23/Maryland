@@ -29,21 +29,19 @@ void auton1() {
 // The second autonomous routine.
 void auton2() {
   chassis.setHeading(0); // place the robot backwards
-  chassis.driveDistance(-30, 6);
-  rollerTop.spin(forward, 4, volt);
-  wait(500, msec);
+  chassis.driveDistance(30, 8);
+  wait(300, msec);
+  chassis.driveDistance(-7, 5);
+  chassis.turnToHeading(90, 6);//was 
+  inTake();
+  chassis.driveDistance(14, 4);
+  wait(1000, msec);
   stopRollers();
-  chassis.driveDistance(8, 5);
-  chassis.turnToHeading(-90, 6);//was 
-  rollerBottom.spin(forward, 9, volt);
-  chassis.driveDistance(13, 4);
-  wait(1050, msec);
-  stopRollers();
-  chassis.turnToHeading(-45, 6);
-  chassis.driveDistance(42, 6);
-  chassis.turnToHeading(0, 6);
+  chassis.turnToHeading(135, 6);
+  chassis.driveDistance(40, 6);
+  chassis.turnToHeading(180, 6);
   chassis.driveDistance(-26, 6);
-  rollerTop.spin(forward, 12, volt);
+  scoreLong();
   wait(1500, msec);
   stopRollers();
 }
