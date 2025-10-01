@@ -1,31 +1,34 @@
 #include "vex.h"
 
-Drive::Drive(motor_group leftDrive, motor_group rightDrive, inertial gyro, float wheelDiameter, float gearRatio):
-  wheelDiameter(wheelDiameter),
-  gearRatio(gearRatio),
-  driveInToDegRatio(gearRatio / 360.0 * M_PI * wheelDiameter),
+Drive::Drive(motor_group leftDrive, motor_group rightDrive, inertial inertialSensor, float wheelDiameter, float gearRatio):
   leftDrive(leftDrive),
   rightDrive(rightDrive),
-  gyro(gyro) {}
+  wheelDiameter(wheelDiameter),
+  gearRatio(gearRatio),
+  inertialSensor(inertialSensor) {}
 
-void Drive::setTurnPID(float turnMaxVoltage, float turnKp, float turnKi, float turnKd, float turnStarti) {
+void Drive::setMaxVoltage(float turnMaxVoltage, float driveMaxVoltage, float headingMaxVoltage)
+{ 
+  this -> driveMaxVoltage = driveMaxVoltage;
   this -> turnMaxVoltage = turnMaxVoltage;
+  this -> headingMaxVoltage = headingMaxVoltage;
+}
+
+void Drive::setTurnPID(float turnKp, float turnKi, float turnKd, float turnStarti) {
   this -> turnKp = turnKp;
   this -> turnKi = turnKi;
   this -> turnKd = turnKd;
   this -> turnStarti = turnStarti;
 }
 
-void Drive::setDrivePID(float driveMaxVoltage, float driveKp, float driveKi, float driveKd, float driveStarti) {
-  this -> driveMaxVoltage = driveMaxVoltage;
+void Drive::setDrivePID(float driveKp, float driveKi, float driveKd, float driveStarti) {
   this -> driveKp = driveKp;
   this -> driveKi = driveKi;
   this -> driveKd = driveKd;
   this -> driveStarti = driveStarti;
 }
 
-void Drive::setHeadingPID(float headingMaxVoltage, float headingKp, float headingKd) {
-  this -> headingMaxVoltage = headingMaxVoltage;
+void Drive::setHeadingPID(float headingKp, float headingKd) {
   this -> headingKp = headingKp;
   this -> headingKd = headingKd;
 }
@@ -43,20 +46,20 @@ void Drive::setDriveExitConditions(float driveSettleError, float driveSettleTime
 }
 
 void Drive::setHeading(float orientationDeg) {
-  gyro.setHeading(orientationDeg, deg);
-  desiredHeading = orientationDeg;
+  inertialSensor.setHeading(orientationDeg, deg);
+  targetHeading = orientationDeg;
 }
 
 float Drive::getHeading() {
-  return (gyro.heading());
+  return inertialSensor.heading();
 }
 
-float Drive::getLeftPositionIn() {
-  return (leftDrive.position(deg) * driveInToDegRatio);
+float Drive::getLeftPosition() {
+  return leftDrive.position(deg) / 360.0 * gearRatio  * M_PI * wheelDiameter;
 }
 
-float Drive::getRightPositionIn() {
-  return (rightDrive.position(deg) * driveInToDegRatio);
+float Drive::getRightPosition() {
+  return rightDrive.position(deg) / 360.0 * gearRatio * M_PI * wheelDiameter;
 }
 
 void Drive::driveWithVoltage(float leftVoltage, float rightVoltage) {
@@ -70,11 +73,11 @@ void Drive::turnToHeading(float heading) {
 }
 
 void Drive::turnToHeading(float heading, float turnMaxVoltage) {
-  desiredHeading = normalize360(heading);
-  PID turnPID(normalize180(heading - getHeading()), turnKp, turnKi, turnKd, turnStarti, turnSettleError, turnSettleTime, turnTimeout);
+  targetHeading = normalize360(heading);
+  PID turnPID(turnKp, turnKi, turnKd, turnStarti, turnSettleError, turnSettleTime, turnTimeout);
   while (!turnPID.isDone() && !drivetrainNeedsStopped) {
     float error = normalize180(heading - getHeading());
-    float output = turnPID.compute(error);
+    float output = turnPID.update(error);
     output = threshold(output, -turnMaxVoltage, turnMaxVoltage);
     driveWithVoltage(output, -output);
     wait(10, msec);
@@ -84,25 +87,25 @@ void Drive::turnToHeading(float heading, float turnMaxVoltage) {
 }
 
 void Drive::driveDistance(float distance) {
-  driveDistance(distance, driveMaxVoltage, desiredHeading, headingMaxVoltage);
+  driveDistance(distance, driveMaxVoltage, targetHeading, headingMaxVoltage);
 }
 
 void Drive::driveDistance(float distance, float driveMaxVoltage) {
-  driveDistance(distance, driveMaxVoltage, desiredHeading, headingMaxVoltage);
+  driveDistance(distance, driveMaxVoltage, targetHeading, headingMaxVoltage);
 }
 
 void Drive::driveDistance(float distance, float driveMaxVoltage, float heading, float headingMaxVoltage) {
-  desiredHeading = normalize360(heading);
-  PID drivePID(distance, driveKp, driveKi, driveKd, driveStarti, driveSettleError, driveSettleTime, driveTimeout);
-  PID headingPID(normalize180(desiredHeading - getHeading()), headingKp, headingKd);
-  float startAveragePosition = (getLeftPositionIn() + getRightPositionIn()) / 2.0;
+  targetHeading = normalize360(heading);
+  PID drivePID(driveKp, driveKi, driveKd, driveStarti, driveSettleError, driveSettleTime, driveTimeout);
+  PID headingPID(headingKp, headingKd);
+  float startAveragePosition = (getLeftPosition() + getRightPosition()) / 2.0;
   float averagePosition = startAveragePosition;
   while (drivePID.isDone() == false && !drivetrainNeedsStopped) {
-    averagePosition = (getLeftPositionIn() + getRightPositionIn()) / 2.0;
+    averagePosition = (getLeftPosition() + getRightPosition()) / 2.0;
     float driveError = distance + startAveragePosition - averagePosition;
-    float headingError = normalize180(desiredHeading - getHeading());
-    float driveOutput = drivePID.compute(driveError);
-    float headingOutput = headingPID.compute(headingError);
+    float headingError = normalize180(targetHeading - getHeading());
+    float driveOutput = drivePID.update(driveError);
+    float headingOutput = headingPID.update(headingError);
 
     driveOutput = threshold(driveOutput, -driveMaxVoltage, driveMaxVoltage);
     headingOutput = threshold(headingOutput, -headingMaxVoltage, headingMaxVoltage);
@@ -112,11 +115,6 @@ void Drive::driveDistance(float distance, float driveMaxVoltage, float heading, 
   }
   leftDrive.stop(hold);
   rightDrive.stop(hold);
-}
-
-
-double curveFunction(double x, double curveScale) {
-  return (powf(2.718, -(curveScale / 10)) + powf(2.718, (fabs(x) - 100) / 10) * (1 - powf(2.718, -(curveScale / 10)))) * x;
 }
 
 void Drive::setArcadeConstants(float kBrake, float kTurnBias, float kTurnDampingFactor)
@@ -133,8 +131,8 @@ void Drive::controlArcade(int y, int x) {
   turn = curveFunction(turn, kTurn);
   throttle = curveFunction(throttle, kThrottle);
 
-  float leftPower = toVolt(throttle + turn);
-  float rightPower = toVolt(throttle - turn);
+  float leftPower = percentToVolt(throttle + turn);
+  float rightPower = percentToVolt(throttle - turn);
 
   if (kTurnBias > 0) {
     if (fabs(throttle) + fabs(turn) > 100) {
@@ -143,8 +141,8 @@ void Drive::controlArcade(int y, int x) {
       throttle *= (1 - kTurnBias * fabs(oldTurn / 100.0));
       turn *= (1 - (1 - kTurnBias) * fabs(oldThrottle / 100.0));
     }
-    leftPower = toVolt(throttle + turn);
-    rightPower = toVolt(throttle - turn);
+    leftPower = percentToVolt(throttle + turn);
+    rightPower = percentToVolt(throttle - turn);
   }
 
   if (fabs(throttle) > 0 || fabs(turn) > 0) {
@@ -176,8 +174,8 @@ void Drive::controlTank(int left, int right) {
   float rightthrottle = curveFunction(right, kThrottle);
 
   if (fabs(leftthrottle) > 0 || fabs(rightthrottle) > 0) {
-    leftDrive.spin(fwd, toVolt(leftthrottle), volt);
-    rightDrive.spin(fwd, toVolt(rightthrottle), volt);
+    leftDrive.spin(fwd, percentToVolt(leftthrottle), volt);
+    rightDrive.spin(fwd, percentToVolt(rightthrottle), volt);
     drivetrainNeedsStopped = true;
   } else {
     if (drivetrainNeedsStopped) {
@@ -206,16 +204,16 @@ void Drive::controlMecanum(int x, int y, int acc, int steer, motor DriveLF, moto
   } 
 
   if (turn == 0 && straight == 0) {
-    DriveLF.spin(fwd, toVolt(throttle + turn + strafe), volt);
-    DriveRF.spin(fwd, toVolt(throttle - turn - strafe), volt);
-    DriveLB.spin(fwd, toVolt(throttle + turn - strafe), volt);
-    DriveRB.spin(fwd, toVolt(throttle - turn + strafe), volt);
+    DriveLF.spin(fwd, percentToVolt(throttle + turn + strafe), volt);
+    DriveRF.spin(fwd, percentToVolt(throttle - turn - strafe), volt);
+    DriveLB.spin(fwd, percentToVolt(throttle + turn - strafe), volt);
+    DriveRB.spin(fwd, percentToVolt(throttle - turn + strafe), volt);
   }
   //aracade drive
   else
   {
-    float leftPower = toVolt(throttle + turn);
-    float rightPower = toVolt(throttle - turn);
+    float leftPower = percentToVolt(throttle + turn);
+    float rightPower = percentToVolt(throttle - turn);
     leftDrive.spin(fwd, leftPower, volt);
     rightDrive.spin(fwd, rightPower, volt);
     drivetrainNeedsStopped = true;
@@ -223,17 +221,17 @@ void Drive::controlMecanum(int x, int y, int acc, int steer, motor DriveLF, moto
 }
 
 void Drive::stop(vex::brakeType mode) {
-    drivetrainNeedsStopped = true;
-    leftDrive.stop(mode);
-    rightDrive.stop(mode);
-    stopMode = mode;
-    leftDrive.resetPosition();
-    rightDrive.resetPosition();
-    drivetrainNeedsStopped = false;
+  drivetrainNeedsStopped = true;
+  leftDrive.stop(mode);
+  rightDrive.stop(mode);
+  stopMode = mode;
+  leftDrive.resetPosition();
+  rightDrive.resetPosition();
+  drivetrainNeedsStopped = false;
 }
 
 void Drive::checkStatus(){
-  int distanceTraveled = (getLeftPositionIn() + getRightPositionIn()) / 2.0;
+  int distanceTraveled = (getLeftPosition() + getRightPosition()) / 2.0;
     // Display heading and the distance traveled previously on the controller screen.
   int h = chassis.getHeading();
   char statusMsg[50];

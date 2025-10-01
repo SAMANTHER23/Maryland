@@ -6,8 +6,6 @@ class PID
 {
 
 private: 
-  // The error between the target and the current value.
-  float error = 0;
   // The proportional gain.
   float kp = 0;
   // The integral gain.
@@ -23,23 +21,22 @@ private:
   // The maximum time the PID can run for.
   float timeout = 0;
   // The accumulated error for the integral term.
-  float accumulatedError = 0;
+  float sumError = 0;
   // The error from the previous iteration.
   float previousError = 0;
-  // The output of the PID controller.
-  float output = 0;
+  
   // The time the PID has been settled for.
-  float timeSpentSettled = 0;
+  float timeSettleTime = 0;
   // The time the PID has been running for.
-  float timeSpentRunning = 0;
+  float timeTimout = 0;
   
 public:
   // A constructor for a simple PID controller with only P and D terms.
-  PID(float error, float kp, float kd);
+  PID(float kp, float kd);
   // A constructor for a full PID controller with P, I, and D terms, as well as exit conditions.
-  PID(float error, float kp, float ki, float kd, float starti, float settleError, float settleTime, float timeout);
+  PID(float kp, float ki, float kd, float starti, float settleError, float settleTime, float timeout);
   // Computes the PID output.
-  float compute(float error);
+  float update(float error);
   // Returns true if the PID has settled or timed out.
   bool isDone();
 };

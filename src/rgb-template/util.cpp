@@ -1,28 +1,32 @@
 #include "vex.h"
 
-float normalize360(float angle) {
-  return fmod(angle + 360, 360);
-}
-
 float normalize180(float angle) {
   return fmod(angle + 540, 360) - 180;
 }
 
-float threshold(float input, float min, float max){
-  if( input > max ){ return(max); }
-  if(input < min){ return(min); }
-  return(input);
+float normalize360(float angle) {
+  return fmod(angle + 360, 360);
 }
 
-float toVolt(float percent){
-  return(percent*12.0/100.0);
+float threshold(float input, float min, float max){
+  if(input > max) return max;
+  if(input < min) return min;
+  return input;
+}
+
+float percentToVolt(float percent){
+  return percent*12.0/100.0;
 }
 
 float deadband(float input, float width){
   if (fabs(input)<width){
-    return(0);
+    return 0;
   }
-  return(input);
+  return input;
+}
+
+double curveFunction(double x, double curveScale) {
+  return (powf(2.718, -(curveScale / 10)) + powf(2.718, (fabs(x) - 100) / 10) * (1 - powf(2.718, -(curveScale / 10)))) * x;
 }
 
 bool checkMotors(int motorCount, int temperatureLimit) {

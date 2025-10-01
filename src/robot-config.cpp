@@ -73,49 +73,117 @@ void toggleHornPosition() {
     hornMotor.spinFor(reverse, 300, degrees, false);
   }
 }
+
 // ------------------------------------------------------------------------
-//               Code below are not specific to any game
+//              Button controls
 // ------------------------------------------------------------------------
 
+// This function is called when the L1 button is pressed.
+void buttonL1Action() {
+  inTake();
+  
+  // Wait until the button is released to stop the rollers.
+  while(controller1.ButtonL1.pressing()) {
+    if (controller1.ButtonR2.pressing()) outTake();
+    wait (20, msec);
+  }
+  stopRollers();
+}
+
+void buttonL2Action() {
+  scoreLong();
+  // Wait until the button is released to stop the rollers.
+  while(controller1.ButtonL2.pressing()) {
+    wait (20, msec);
+  }
+  stopRollers();
+}
+
+void buttonR1Action() {
+  toggleHornPosition();
+}
+
+void buttonR2Action()
+{
+  // brake the drivetrain until the button is released.
+  chassis.stop(hold);
+  controller1.rumble(".");
+  waitUntil(!controller1.ButtonR2.pressing());
+  chassis.checkStatus();
+  chassis.stop(coast);
+}
+
+void buttonBAction() {
+  chassis.setHeading(180);
+  hornUp = false;
+  toggleHornPosition();
+  chassis.driveDistance(10);
+  chassis.turnToHeading(90);
+  chassis.driveDistance(12);
+  toggleHornPosition();
+  chassis.turnToHeading(180);
+  chassis.driveDistance(-24);
+}
+
+void setupButtonMapping() {
+  controller1.ButtonL1.pressed(buttonL1Action);
+  controller1.ButtonR1.pressed(buttonR1Action);
+  controller1.ButtonL2.pressed(buttonL2Action);
+  controller1.ButtonR2.pressed(buttonR2Action);
+  controller1.ButtonB.pressed(buttonBAction);
+}
+
+
+
+
+// ------------------------------------------------------------------------
+//               chassis parameters and PID constants
+// ------------------------------------------------------------------------
 
 Drive chassis(
   //Left Motors:
-  motor_group(leftMotor1, leftMotor2, leftMotor3),
+  motor_group(leftMotor2, leftMotor1, leftMotor3),
   //Right Motors:
-  motor_group(rightMotor1, rightMotor2, rightMotor3),
+  motor_group(rightMotor2, rightMotor1, rightMotor3),
   //Inertial Sensor:
   inertial1,
   //wheel diameter:
   2.75,
   //Gear ratio of motor to wheel: if your motor has an 36-tooth gear and your wheel has a 48-tooth gear, this value will be 0.75.
-  2.25 
+  0.75
 );
 
 // Resets the chassis constants.
 void setChassisDefaults() {
   // Sets the heading of the chassis to the current heading of the inertial sensor.
-  chassis.setHeading(chassis.gyro.heading());
+  chassis.setHeading(chassis.inertialSensor.heading());
 
+  chassis.setMaxVoltage(10, 10, 6);
   // Sets the drive PID constants for the chassis.
   // These constants are used to control the acceleration and deceleration of the chassis.
-  chassis.setDrivePID(10, 1.5, 0, 10, 0);
+  chassis.setDrivePID(1.5, 0, 10, 0);
   // Sets the turn PID constants for the chassis.
   // These constants are used to control the turning of the chassis.
-  chassis.setTurnPID(10, 0.2, .015, 1.5, 7.5);
+  chassis.setTurnPID(0.2, .015, 1.5, 7.5);
   // Sets the heading PID constants for the chassis.
   // These constants are used to control the heading adjustment of the chassis.
-  chassis.setHeadingPID(6, .4, 1);
+  chassis.setHeadingPID(0.4, 1);
   // Sets the exit conditions for the drive functions.
   // These conditions are used to determine when the drive function should exit.
-  chassis.setDriveExitConditions(1, 200, 2000);
+  chassis.setDriveExitConditions(1, 300, 3000);
   // Sets the exit conditions for the turn functions.
   // These conditions are used to determine when the turn function should exit.
-  chassis.setTurnExitConditions(1.5, 200, 1500);
+  chassis.setTurnExitConditions(1.5, 300, 3000);
 
   // Sets the arcade drive constants for the chassis.
   // These constants are used to control the arcade drive of the chassis.
   chassis.setArcadeConstants(0.5, 0.5, 0.85);
 }
+
+
+// ------------------------------------------------------------------------
+//              Drive modes and user control
+// ------------------------------------------------------------------------
 
 void changeDriveMode(){
   controller1.rumble("-");
@@ -144,12 +212,6 @@ void usercontrol(void) {
 
   // This loop runs forever, controlling the robot during the driver control period.
   while (1) {
-    if (!chassis.joystickTouched){
-      if(controller1.Axis1.position() != 0 || controller1.Axis2.position() != 0 
-        || controller1.Axis3.position() != 0 || controller1.Axis4.position() != 0) {
-        chassis.joystickTouched = true;
-      }
-    }
     switch (DRIVE_MODE) {
     case 0: // double arcade
       chassis.controlArcade(controller1.Axis2.position(), controller1.Axis4.position());

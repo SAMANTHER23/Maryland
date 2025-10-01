@@ -26,8 +26,8 @@ This library is designed specifically for teams who are getting started with VEX
 The project is organized into the following directories:
 
 *   `src/`: Main source code
-    *   `main.cpp`: Entry point, competition control, and button mappings
-    *   `robot-config.cpp`: Configuration for drivetrain motors, sensors, and other subsystems
+    *   `main.cpp`: Entry point and (optional) remote control
+    *   `robot-config.cpp`: Configuration for drivetrain, subsystems and button controls
     *   `autons.cpp`: Autonomous routines
     *   `rgb-template/`: Library code
 *   `include/`: Header files
@@ -51,7 +51,7 @@ For detailed step-by-step configuration instructions, see [Configuration Guide](
     *  For correct auton driving distance measurement, find the Drive constructor in `robot-config.cpp` and update the wheel diameter and gear ratio parameters
 *   **(Optional) Drive Constants:** If needed, adjust any of constants for the drivetrain in the `setChassisDefaults()` function. For example, adjust the `kTurnDampingFactor` value in `setArcadeConstants()` to control turn sensitivity - lower values make turning less sensitive, higher values make turning more sensitive. 
 
-### Driver Control ([main.cpp](src/main.cpp))
+### Driver Control  ([robot-config.cpp](src/robot-config.cpp))
 
 *   **Button Functions:** Write your button functions
 *   **Button Bindings:** In the `setupButtonMapping()` function, map event handlers of the buttons to the functions.
