@@ -34,8 +34,22 @@ motor hornMotor = motor(PORT8, ratio18_1, true);//19 for one, 14 for two
 
 // total number of motors, including drivetrain
 const int NUMBER_OF_MOTORS = 8;
-void driveDistance() {
-  // Placeholder function to avoid compilation errors.
+
+bool hornUp = false;
+void toggleHornPosition() {
+  hornUp = !hornUp;
+  if (hornUp) {
+    hornMotor.spin(forward, 8, volt);
+    wait(100, msec);
+    waitUntil(hornMotor.torque()>0.4);
+    hornMotor.stop(brake);
+    chassis.stop(coast);
+  } else {
+    hornMotor.setVelocity(75, percent);
+    hornMotor.setTimeout(1000, msec);
+    hornMotor.spinFor(reverse, 300, degrees, false);
+    chassis.stop(hold);
+  }
 }
 
 void inTake() {
@@ -52,27 +66,16 @@ void stopRollers() {
   // Stops the roller motors.
   rollerBottom.stop(brake);
   rollerTop.stop(brake);
+  chassis.stop(coast);
 }
 
 void scoreLong() {
   rollerBottom.spin(forward, 11, volt);
   rollerTop.spin(forward, 11, volt);
+  chassis.stop(hold);
 }
 
-bool hornUp = false;
-void toggleHornPosition() {
-  hornUp = !hornUp;
-  if (hornUp) {
-    hornMotor.spin(forward, 8, volt);
-    wait(100, msec);
-    waitUntil(hornMotor.torque()>0.4);
-    hornMotor.stop(brake);
-  } else {
-    hornMotor.setVelocity(75, percent);
-    hornMotor.setTimeout(1000, msec);
-    hornMotor.spinFor(reverse, 300, degrees, false);
-  }
-}
+
 
 // ------------------------------------------------------------------------
 //              Button controls
@@ -113,16 +116,25 @@ void buttonR2Action()
   chassis.stop(coast);
 }
 
-void buttonBAction() {
-  chassis.setHeading(180);
-  hornUp = false;
-  toggleHornPosition();
-  chassis.driveDistance(10);
-  chassis.turnToHeading(90);
-  chassis.driveDistance(12);
-  toggleHornPosition();
-  chassis.turnToHeading(180);
-  chassis.driveDistance(-24);
+bool macroMode = false;
+void buttonAAction() {
+  if(macroMode) return;
+  macroMode = true;
+  float currentHeading = chassis.inertialSensor.heading();
+
+  if(hornUp) {
+    chassis.driveDistance(10, 10, currentHeading, 6);
+    chassis.turnToHeading(currentHeading-90);
+    chassis.driveDistance(13);
+    toggleHornPosition();
+    chassis.turnToHeading(currentHeading);
+    chassis.driveDistance(-24);
+  }
+  else {
+    chassis.driveDistance(-24, 10, currentHeading, 6);
+  }
+  macroMode = false;
+ 
 }
 
 void setupButtonMapping() {
@@ -130,7 +142,7 @@ void setupButtonMapping() {
   controller1.ButtonR1.pressed(buttonR1Action);
   controller1.ButtonL2.pressed(buttonL2Action);
   controller1.ButtonR2.pressed(buttonR2Action);
-  controller1.ButtonB.pressed(buttonBAction);
+  controller1.ButtonA.pressed(buttonAAction);
 }
 
 

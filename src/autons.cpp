@@ -49,16 +49,15 @@ void autonRight() {
   wait(50, msec);
 
   //grab three balls
-  chassis.driveDistance(-7, 5);
-  chassis.turnToHeading(90, 6);//was 
+  chassis.driveDistance(-6);
+  chassis.turnToHeading(90);
   inTake();
-  chassis.driveDistance(14, 4);
-  wait(1000, msec);
+  chassis.driveDistance(20, 4);
+  chassis.turnToHeading(130, 6);
   stopRollers();
 
   //Score long goal
-  chassis.turnToHeading(135, 6);
-  chassis.driveDistance(40, 6);
+  chassis.driveDistance(29, 6);
   chassis.turnToHeading(180, 6);
   chassis.driveDistance(-26, 6);
   scoreLong();
