@@ -98,11 +98,11 @@ void buttonL2Action() {
   // Wait until the button is released to stop the rollers.
   while(controller1.ButtonL2.pressing()) {
     wait (20, msec);
-    if(controller1.ButtonR2.pressed){
+    if(controller1.ButtonR2.pressing()){
       rollerTop.spin(forward, 6, volt);
       rollerBottom.spin(forward, 6, volt);
     }
-    elif(controller1.ButtonR1.pressed){
+    else if(controller1.ButtonR1.pressing()){
       rollerBottom.spin(backwards, 6, volt);
     }
   }
