@@ -103,7 +103,7 @@ void buttonL2Action() {
       rollerBottom.spin(forward, 6, volt);
     }
     else if(controller1.ButtonR1.pressing()){
-      rollerBottom.spin(backwards, 6, volt);
+      rollerBottom.spin(reverse, 6, volt);
     }
   }
   stopRollers();
